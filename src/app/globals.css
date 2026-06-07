@@ -3,6 +3,7 @@
 html {
   scroll-behavior: smooth;
 }
+
 body {
   overflow-x: hidden;
 }
@@ -14,8 +15,9 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
   .card-hover {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:border-forest-primary hover:shadow-xl;
+    @apply transition-all duration-300;
   }
 }
 
@@ -28,6 +30,7 @@ body {
     transform: translate(-20px, 20px);
   }
 }
+
 @keyframes pulse-slow {
   0%,
   100% {
@@ -39,9 +42,11 @@ body {
     opacity: 0.85;
   }
 }
+
 .animate-float {
   animation: float 20s ease-in-out infinite;
 }
+
 .animate-pulse-slow {
   animation: pulse-slow 2s ease-in-out infinite;
 }
