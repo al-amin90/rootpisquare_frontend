@@ -1,178 +1,571 @@
 "use client";
-import { useState } from "react";
+import {
+  useDeleteDynamicMutation,
+  useGetDynamicQuery,
+  usePatchDynamicMutation,
+  usePostDynamicMutation,
+} from "@/src/redux/features/dynamic/dynamicApi";
+import { TClass, TSubject, TVideo } from "@/src/types";
+import { showApiError } from "@/src/utils/showApiError";
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 
-const mockClasses = [
-  "Class 5",
-  "Class 6",
-  "Class 7",
-  "Class 8",
-  "Class 9",
-  "Class 10",
-  "HSC 1st Year",
-  "HSC 2nd Year",
-];
-const mockSubjects = [
-  "Bangla",
-  "English",
-  "Math",
-  "Science",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "Higher Math",
-];
+type TPlaylistSubject = {
+  _id: string;
+  subjectName: {
+    _id: string;
+    name: string;
+  };
+  image: string;
+  description: string;
+};
 
-type Video = {
-  className: string;
-  subjectName: string;
-  youtubeURL: string;
-  name: string;
+type TPlaylist = {
+  _id: string;
+  className: {
+    _id: string;
+    name: string;
+  };
+  subjects: TPlaylistSubject[];
 };
 
 export default function VideosPage() {
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [form, setForm] = useState<Video>({
+  const emptyForm = {
     className: "",
-    subjectName: "",
-    youtubeURL: "",
+    playlistSubjectId: "", // Store the playlist subject _id
+    subjectName: "", // Store the actual subject name for display
+    embedCode: "",
     name: "",
-  });
-
-  const update = (key: keyof Video, val: string) =>
-    setForm((f) => ({ ...f, [key]: val }));
-
-  const submit = () => {
-    if (!form.className || !form.subjectName || !form.youtubeURL || !form.name)
-      return;
-    setVideos((prev) => [...prev, form]);
-    setForm({ className: "", subjectName: "", youtubeURL: "", name: "" });
   };
 
-  const getThumb = (url: string) => {
-    const match = url.match(/(?:v=|youtu\.be\/)([^&?]+)/);
-    return match
-      ? `https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`
+  const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState<TVideo | null>(null);
+  const [editForm, setEditForm] = useState(emptyForm);
+  const [playlistSubjects, setPlaylistSubjects] = useState<TPlaylistSubject[]>(
+    [],
+  );
+  const [selectedPlaylist, setSelectedPlaylist] = useState<TPlaylist | null>(
+    null,
+  );
+
+  const { data: videoData, isLoading } = useGetDynamicQuery({
+    url: "/video",
+  });
+
+  const { data: classData } = useGetDynamicQuery({
+    url: "/class",
+  });
+
+  // Fetch playlist for selected class
+  const { data: playlistData, refetch: refetchPlaylist } = useGetDynamicQuery(
+    {
+      url: form.className ? `/playlist/classID/${form.className}` : "",
+    },
+    { skip: !form.className },
+  );
+
+  const [createVideo, { isLoading: creating }] = usePostDynamicMutation();
+  const [updateVideo, { isLoading: updating }] = usePatchDynamicMutation();
+  const [deleteVideo] = useDeleteDynamicMutation();
+
+  const videos: TVideo[] = videoData?.data || [];
+  const classes: TClass[] = classData?.data || [];
+  const playlists: TPlaylist[] = playlistData?.data || [];
+
+  // Extract subjects from playlist when class is selected
+  useEffect(() => {
+    if (form.className && playlists.length > 0) {
+      // Assuming one playlist per class
+      const playlist = playlists[0];
+      setSelectedPlaylist(playlist);
+      setPlaylistSubjects(playlist?.subjects || []);
+    } else {
+      setSelectedPlaylist(null);
+      setPlaylistSubjects([]);
+    }
+  }, [form.className, playlists]);
+
+  const updateForm = (key: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (key === "className") {
+      // Reset subject-related fields when class changes
+      setForm((prev) => ({ ...prev, playlistSubjectId: "", subjectName: "" }));
+      setPlaylistSubjects([]);
+      setSelectedPlaylist(null);
+    }
+  };
+
+  const updateEditForm = (key: keyof typeof editForm, value: string) => {
+    setEditForm((prev) => ({ ...prev, [key]: value }));
+    if (key === "className") {
+      setEditForm((prev) => ({
+        ...prev,
+        playlistSubjectId: "",
+        subjectName: "",
+      }));
+    }
+  };
+
+  // Handle subject selection from playlist
+  const handleSubjectSelect = (playlistSubjectId: string) => {
+    const selected = playlistSubjects.find((s) => s._id === playlistSubjectId);
+    if (selected) {
+      setForm((prev) => ({
+        ...prev,
+        playlistSubjectId: selected._id,
+        subjectName: selected.subjectName.name,
+      }));
+    }
+  };
+
+  const handleEditSubjectSelect = (playlistSubjectId: string) => {
+    // For edit mode, we need to fetch playlist for the edited class
+    const selected = playlistSubjects.find((s) => s._id === playlistSubjectId);
+    if (selected) {
+      setEditForm((prev) => ({
+        ...prev,
+        playlistSubjectId: selected._id,
+        subjectName: selected.subjectName.name,
+      }));
+    }
+  };
+
+  const extractVideoId = (input: string) => {
+    let match = input.match(
+      /src="https:\/\/www\.youtube\.com\/embed\/([^"?]+)/,
+    );
+    if (match) return match[1];
+
+    match = input.match(/(?:v=|youtu\.be\/|youtube\.com\/embed\/)([^&?/]+)/);
+    if (match) return match[1];
+
+    if (input.length === 11) return input;
+
+    return null;
+  };
+
+  const getThumbFromEmbed = (embedCode: string) => {
+    const videoId = extractVideoId(embedCode);
+    return videoId
+      ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
       : null;
   };
 
+  const handleCreate = async () => {
+    if (
+      !form.className ||
+      !form.playlistSubjectId ||
+      !form.embedCode ||
+      !form.name
+    ) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    const videoId = extractVideoId(form.embedCode);
+    if (!videoId) {
+      toast.error("Invalid YouTube embed code");
+      return;
+    }
+
+    try {
+      await createVideo({
+        url: "/video",
+        data: {
+          className: form.className,
+          subjectName: form.playlistSubjectId, // Send the playlist subject _id
+          youtubeURL: videoId,
+          name: form.name,
+        },
+        invalidatesTags: ["video"],
+      }).unwrap();
+
+      toast.success("Video created successfully");
+      setForm(emptyForm);
+    } catch (error) {
+      showApiError(error);
+    }
+  };
+
+  const openEdit = async (video: TVideo) => {
+    setEditing(video);
+
+    // Fetch playlist for the video's class to get subjects
+    const playlistResponse = await fetch(
+      `http://localhost:5000/api/v1/playlist/classID/${video.className._id}`,
+    );
+    const playlistData = await playlistResponse.json();
+    const playlist = playlistData.data?.[0];
+
+    if (playlist) {
+      const playlistSubjects = playlist.subjects;
+      // Find the matching playlist subject
+      const matchedSubject = playlistSubjects.find(
+        (s: any) => s.subjectName._id === video.subjectName._id,
+      );
+
+      setEditForm({
+        className: video.className._id,
+        playlistSubjectId: matchedSubject?._id || "",
+        subjectName: video.subjectName.name,
+        embedCode: `https://www.youtube.com/embed/${video.youtubeURL}`,
+        name: video.name,
+      });
+
+      setPlaylistSubjects(playlistSubjects);
+      setSelectedPlaylist(playlist);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!editing) return;
+
+    const videoId = extractVideoId(editForm.embedCode);
+    if (!videoId) {
+      toast.error("Invalid YouTube embed code");
+      return;
+    }
+
+    try {
+      await updateVideo({
+        url: `/video/${editing._id}`,
+        data: {
+          className: editForm.className,
+          subjectName: editForm.playlistSubjectId,
+          youtubeURL: videoId,
+          name: editForm.name,
+        },
+        invalidatesTags: ["video"],
+      }).unwrap();
+
+      toast.success("Video updated successfully");
+      setEditing(null);
+    } catch (error) {
+      showApiError(error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const confirmed = confirm("Are you sure you want to delete this video?");
+    if (!confirmed) return;
+
+    try {
+      await deleteVideo({
+        url: `/video/${id}`,
+        invalidatesTags: ["video"],
+      }).unwrap();
+      toast.success("Video deleted successfully");
+    } catch (error) {
+      showApiError(error);
+    }
+  };
+
+  const getEmbedUrl = (videoId: string) => {
+    return `https://www.youtube.com/embed/${videoId}`;
+  };
+
   return (
-    <div>
-      <h1 className="text-2xl font-extrabold text-[#E8F5E8] mb-1">
-        Post Video
-      </h1>
-      <p className="text-[#A8C5A8] text-sm mb-8">
-        Add YouTube videos to your classes
-      </p>
+    <div className="p-6 bg-[#0A0F0A] min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-2xl font-extrabold text-[#E8F5E8] mb-1">
+          Post Video
+        </h1>
+        <p className="text-[#A8C5A8] text-sm mb-8">
+          Add YouTube videos to your classes
+        </p>
 
-      <div className="bg-[#0F170F] border border-[#1F3521] rounded-xl p-6 mb-6 max-w-xl">
-        <h2 className="font-bold text-[#E8F5E8] mb-5">Add Video</h2>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[#A8C5A8] text-sm mb-1.5">
-                Class
-              </label>
-              <select
-                value={form.className}
-                onChange={(e) => update("className", e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none"
-              >
-                <option value="">Select</option>
-                {mockClasses.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-[#A8C5A8] text-sm mb-1.5">
-                Subject
-              </label>
-              <select
-                value={form.subjectName}
-                onChange={(e) => update("subjectName", e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none"
-              >
-                <option value="">Select</option>
-                {mockSubjects.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-[#A8C5A8] text-sm mb-1.5">
-              Video Name
-            </label>
-            <input
-              value={form.name}
-              onChange={(e) => update("name", e.target.value)}
-              placeholder="e.g. Chapter 1 - Introduction"
-              className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-[#A8C5A8] text-sm mb-1.5">
-              YouTube URL
-            </label>
-            <input
-              value={form.youtubeURL}
-              onChange={(e) => update("youtubeURL", e.target.value)}
-              placeholder="https://youtube.com/watch?v=..."
-              className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none"
-            />
-          </div>
-          {form.youtubeURL && getThumb(form.youtubeURL) && (
-            <img
-              src={getThumb(form.youtubeURL)!}
-              alt="thumb"
-              className="w-full rounded-lg"
-            />
-          )}
-          <button
-            onClick={submit}
-            className="w-full py-2.5 bg-[#228B22] text-white font-semibold rounded-lg hover:bg-[#3DAA3D] transition-colors"
-          >
-            Post Video
-          </button>
-        </div>
-      </div>
+        {/* Create Form */}
+        <div className="bg-[#0F170F] border border-[#1F3521] rounded-xl p-6 mb-6 max-w-2xl">
+          <h2 className="font-bold text-[#E8F5E8] mb-5">Add New Video</h2>
 
-      {videos.length > 0 && (
-        <div className="bg-[#0F170F] border border-[#1F3521] rounded-xl p-6">
-          <h2 className="font-bold text-[#E8F5E8] mb-4">
-            Posted Videos ({videos.length})
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {videos.map((v, i) => (
-              <div
-                key={i}
-                className="bg-[#131A13] border border-[#1F3521] rounded-xl overflow-hidden"
-              >
-                {getThumb(v.youtubeURL) && (
-                  <img
-                    src={getThumb(v.youtubeURL)!}
-                    alt={v.name}
-                    className="w-full"
-                  />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[#A8C5A8] text-sm mb-1.5">
+                  Class
+                </label>
+                <select
+                  value={form.className}
+                  onChange={(e) => updateForm("className", e.target.value)}
+                  className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none"
+                >
+                  <option value="">Select Class</option>
+                  {classes.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[#A8C5A8] text-sm mb-1.5">
+                  Subject from Playlist
+                </label>
+                <select
+                  value={form.playlistSubjectId}
+                  onChange={(e) => handleSubjectSelect(e.target.value)}
+                  disabled={!form.className || playlistSubjects.length === 0}
+                  className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">Select Subject</option>
+                  {playlistSubjects.map((subject) => (
+                    <option key={subject._id} value={subject._id}>
+                      {subject.subjectName.name}
+                    </option>
+                  ))}
+                </select>
+                {form.className && playlistSubjects.length === 0 && (
+                  <p className="text-yellow-500 text-xs mt-1">
+                    No playlist found for this class. Please create a playlist
+                    first.
+                  </p>
                 )}
-                <div className="p-3">
-                  <h3 className="font-bold text-[#E8F5E8] text-sm mb-1">
-                    {v.name}
-                  </h3>
-                  <div className="flex gap-2 text-xs text-[#7A9A7A]">
-                    <span>🎓 {v.className}</span>
-                    <span>📚 {v.subjectName}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[#A8C5A8] text-sm mb-1.5">
+                Video Name
+              </label>
+              <input
+                value={form.name}
+                onChange={(e) => updateForm("name", e.target.value)}
+                placeholder="e.g. Chapter 1 - Introduction"
+                className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[#A8C5A8] text-sm mb-1.5">
+                YouTube Embed Code
+              </label>
+              <textarea
+                value={form.embedCode}
+                onChange={(e) => updateForm("embedCode", e.target.value)}
+                placeholder='<iframe width="560" height="315" src="https://www.youtube.com/embed/VIDEO_ID" ...></iframe>'
+                rows={4}
+                className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none font-mono text-xs"
+              />
+              <p className="text-[#7A9A7A] text-xs mt-1">
+                Paste the full YouTube embed iframe code
+              </p>
+            </div>
+
+            {form.embedCode && getThumbFromEmbed(form.embedCode) && (
+              <div className="rounded-lg overflow-hidden bg-[#131A13] p-2">
+                <img
+                  src={getThumbFromEmbed(form.embedCode)!}
+                  alt="Preview"
+                  className="w-full max-h-48 object-cover rounded"
+                />
+              </div>
+            )}
+
+            <button
+              onClick={handleCreate}
+              disabled={creating}
+              className="w-full py-2.5 bg-[#228B22] text-white font-semibold rounded-lg hover:bg-[#3DAA3D] transition-colors disabled:opacity-50"
+            >
+              {creating ? "Posting..." : "Post Video"}
+            </button>
+          </div>
+        </div>
+
+        {/* Videos Grid */}
+        {videos.length > 0 && (
+          <div className="bg-[#0F170F] border border-[#1F3521] rounded-xl p-6">
+            <h2 className="font-bold text-[#E8F5E8] mb-4">
+              Videos ({videos.length})
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {videos.map((video) => (
+                <div
+                  key={video._id}
+                  className="bg-[#131A13] border border-[#1F3521] rounded-xl overflow-hidden hover:border-[#2E8B57] transition-all group"
+                >
+                  <div className="relative aspect-video">
+                    <iframe
+                      src={getEmbedUrl(video.youtubeURL)}
+                      title={video.name}
+                      className="w-full h-full"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+
+                  <div className="p-4">
+                    <h3 className="font-bold text-[#E8F5E8] text-base mb-2 line-clamp-2">
+                      {video.name}
+                    </h3>
+
+                    <div className="flex flex-wrap gap-2 text-xs text-[#7A9A7A] mb-3">
+                      <span className="px-2 py-1 bg-[#0A0F0A] rounded">
+                        🎓 {video.className?.name}
+                      </span>
+                      <span className="px-2 py-1 bg-[#0A0F0A] rounded">
+                        📚 {video.subjectName?.name}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2 pt-3 border-t border-[#1F3521]">
+                      <button
+                        onClick={() => openEdit(video)}
+                        className="flex-1 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 text-sm font-medium hover:bg-blue-500/30 transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(video._id)}
+                        className="flex-1 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-sm font-medium hover:bg-red-500/30 transition"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {videos.length === 0 && !isLoading && (
+          <div className="bg-[#0F170F] border border-[#1F3521] rounded-xl p-12 text-center">
+            <p className="text-[#A8C5A8]">
+              No videos found. Add your first video!
+            </p>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {editing && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-[#0F170F] to-[#0A0F0A] border border-[#1F3521] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-[#0F170F]/95 backdrop-blur-sm border-b border-[#1F3521] px-6 py-4 rounded-t-2xl">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-xl font-bold text-[#E8F5E8]">
+                      Edit Video
+                    </h2>
+                    <p className="text-sm text-[#A8C5A8] mt-1">
+                      Update video information
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setEditing(null)}
+                    className="text-gray-400 hover:text-white transition-colors text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[#A8C5A8] text-sm mb-1.5">
+                        Class
+                      </label>
+                      <select
+                        value={editForm.className}
+                        onChange={(e) =>
+                          updateEditForm("className", e.target.value)
+                        }
+                        className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none"
+                      >
+                        <option value="">Select Class</option>
+                        {classes.map((c) => (
+                          <option key={c._id} value={c._id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[#A8C5A8] text-sm mb-1.5">
+                        Subject from Playlist
+                      </label>
+                      <select
+                        value={editForm.playlistSubjectId}
+                        onChange={(e) =>
+                          handleEditSubjectSelect(e.target.value)
+                        }
+                        disabled={
+                          !editForm.className || playlistSubjects.length === 0
+                        }
+                        className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none disabled:opacity-50"
+                      >
+                        <option value="">Select Subject</option>
+                        {playlistSubjects.map((subject) => (
+                          <option key={subject._id} value={subject._id}>
+                            {subject.subjectName.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[#A8C5A8] text-sm mb-1.5">
+                      Video Name
+                    </label>
+                    <input
+                      value={editForm.name}
+                      onChange={(e) => updateEditForm("name", e.target.value)}
+                      className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[#A8C5A8] text-sm mb-1.5">
+                      YouTube Embed Code
+                    </label>
+                    <textarea
+                      value={editForm.embedCode}
+                      onChange={(e) =>
+                        updateEditForm("embedCode", e.target.value)
+                      }
+                      rows={4}
+                      className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none font-mono text-xs"
+                    />
+                  </div>
+
+                  {editForm.embedCode &&
+                    getThumbFromEmbed(editForm.embedCode) && (
+                      <div className="rounded-lg overflow-hidden bg-[#131A13] p-2">
+                        <img
+                          src={getThumbFromEmbed(editForm.embedCode)!}
+                          alt="Preview"
+                          className="w-full max-h-48 object-cover rounded"
+                        />
+                      </div>
+                    )}
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={handleUpdate}
+                      disabled={updating}
+                      className="flex-1 py-2.5 bg-gradient-to-r from-[#228B22] to-[#2E8B57] text-white rounded-lg font-semibold hover:from-[#2E8B57] hover:to-[#3DAA3D] transition-all disabled:opacity-50"
+                    >
+                      {updating ? "Updating..." : "Update Video"}
+                    </button>
+                    <button
+                      onClick={() => setEditing(null)}
+                      className="px-6 py-2.5 bg-[#1A1A1A] text-[#A8C5A8] rounded-lg font-semibold hover:bg-[#252525] hover:text-[#E8F5E8] transition-all border border-[#1F3521]"
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

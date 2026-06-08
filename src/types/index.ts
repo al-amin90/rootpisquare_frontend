@@ -32,3 +32,17 @@ export type TPlaylistForm = {
   className: string;
   subjects: TSubjectEntryForm[];
 };
+
+export type TVideo = {
+  _id: string;
+  className: {
+    _id: string;
+    name: string;
+  };
+  subjectName: {
+    _id: string;
+    name: string;
+  };
+  youtubeURL: string;
+  name: string;
+};
