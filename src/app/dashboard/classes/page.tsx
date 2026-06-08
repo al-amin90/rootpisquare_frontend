@@ -8,6 +8,7 @@ import {
   usePostDynamicMutation,
 } from "@/src/redux/features/dynamic/dynamicApi";
 import { showApiError } from "@/src/utils/showApiError";
+import { TClass } from "@/src/types";
 
 export default function ClassesPage() {
   const [name, setName] = useState("");
@@ -206,8 +207,3 @@ export default function ClassesPage() {
     </div>
   );
 }
-
-type TClass = {
-  _id: string;
-  name: string;
-};

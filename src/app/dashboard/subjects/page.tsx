@@ -11,11 +11,7 @@ import {
 } from "@/src/redux/features/dynamic/dynamicApi";
 
 import { showApiError } from "@/src/utils/showApiError";
-
-type TSubject = {
-  _id: string;
-  name: string;
-};
+import { TSubject } from "@/src/types";
 
 export default function SubjectsPage() {
   const [name, setName] = useState("");
@@ -51,7 +47,7 @@ export default function SubjectsPage() {
 
       setName("");
     } catch (error) {
-      toast.error(showApiError(error));
+      showApiError(error);
     }
   };
 
@@ -72,7 +68,7 @@ export default function SubjectsPage() {
       setEditing(null);
       setEditName("");
     } catch (error) {
-      toast.error(showApiError(error));
+      showApiError(error);
     }
   };
 
@@ -89,7 +85,7 @@ export default function SubjectsPage() {
 
       toast.success("Subject deleted successfully");
     } catch (error) {
-      toast.error(showApiError(error));
+      showApiError(error);
     }
   };
 
