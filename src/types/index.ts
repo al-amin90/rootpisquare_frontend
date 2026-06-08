@@ -46,3 +46,11 @@ export type TVideo = {
   youtubeURL: string;
   name: string;
 };
+
+export type TNote = {
+  _id: string;
+  name: string;
+  image: string;
+  driveLink: string;
+  existingImage?: string;
+};

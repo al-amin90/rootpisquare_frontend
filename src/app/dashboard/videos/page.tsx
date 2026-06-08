@@ -32,8 +32,7 @@ type TPlaylist = {
 export default function VideosPage() {
   const emptyForm = {
     className: "",
-    playlistSubjectId: "", // Store the playlist subject _id
-    subjectName: "", // Store the actual subject name for display
+    playlistSubjectId: "",
     embedCode: "",
     name: "",
   };
@@ -44,11 +43,15 @@ export default function VideosPage() {
   const [playlistSubjects, setPlaylistSubjects] = useState<TPlaylistSubject[]>(
     [],
   );
-  const [selectedPlaylist, setSelectedPlaylist] = useState<TPlaylist | null>(
-    null,
-  );
+  const [editPlaylistSubjects, setEditPlaylistSubjects] = useState<
+    TPlaylistSubject[]
+  >([]);
 
-  const { data: videoData, isLoading } = useGetDynamicQuery({
+  const {
+    data: videoData,
+    isLoading,
+    refetch: refetchVideos,
+  } = useGetDynamicQuery({
     url: "/video",
   });
 
@@ -56,13 +59,24 @@ export default function VideosPage() {
     url: "/class",
   });
 
-  // Fetch playlist for selected class
+  // Fetch playlist for selected class in create form
   const { data: playlistData, refetch: refetchPlaylist } = useGetDynamicQuery(
     {
       url: form.className ? `/playlist/classID/${form.className}` : "",
     },
     { skip: !form.className },
   );
+
+  // Fetch playlist for edit form
+  const { data: editPlaylistData, refetch: refetchEditPlaylist } =
+    useGetDynamicQuery(
+      {
+        url: editForm.className
+          ? `/playlist/classID/${editForm.className}`
+          : "",
+      },
+      { skip: !editForm.className },
+    );
 
   const [createVideo, { isLoading: creating }] = usePostDynamicMutation();
   const [updateVideo, { isLoading: updating }] = usePatchDynamicMutation();
@@ -71,62 +85,41 @@ export default function VideosPage() {
   const videos: TVideo[] = videoData?.data || [];
   const classes: TClass[] = classData?.data || [];
   const playlists: TPlaylist[] = playlistData?.data || [];
+  const editPlaylists: TPlaylist[] = editPlaylistData?.data || [];
 
-  // Extract subjects from playlist when class is selected
+  // Extract subjects from playlist when class is selected (create form)
   useEffect(() => {
     if (form.className && playlists.length > 0) {
-      // Assuming one playlist per class
       const playlist = playlists[0];
-      setSelectedPlaylist(playlist);
       setPlaylistSubjects(playlist?.subjects || []);
     } else {
-      setSelectedPlaylist(null);
       setPlaylistSubjects([]);
     }
   }, [form.className, playlists]);
 
+  // Extract subjects from playlist when class is selected (edit form)
+  useEffect(() => {
+    if (editForm.className && editPlaylists.length > 0) {
+      const playlist = editPlaylists[0];
+      setEditPlaylistSubjects(playlist?.subjects || []);
+    } else {
+      setEditPlaylistSubjects([]);
+    }
+  }, [editForm.className, editPlaylists]);
+
   const updateForm = (key: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (key === "className") {
-      // Reset subject-related fields when class changes
-      setForm((prev) => ({ ...prev, playlistSubjectId: "", subjectName: "" }));
+      setForm((prev) => ({ ...prev, playlistSubjectId: "" }));
       setPlaylistSubjects([]);
-      setSelectedPlaylist(null);
     }
   };
 
   const updateEditForm = (key: keyof typeof editForm, value: string) => {
     setEditForm((prev) => ({ ...prev, [key]: value }));
     if (key === "className") {
-      setEditForm((prev) => ({
-        ...prev,
-        playlistSubjectId: "",
-        subjectName: "",
-      }));
-    }
-  };
-
-  // Handle subject selection from playlist
-  const handleSubjectSelect = (playlistSubjectId: string) => {
-    const selected = playlistSubjects.find((s) => s._id === playlistSubjectId);
-    if (selected) {
-      setForm((prev) => ({
-        ...prev,
-        playlistSubjectId: selected._id,
-        subjectName: selected.subjectName.name,
-      }));
-    }
-  };
-
-  const handleEditSubjectSelect = (playlistSubjectId: string) => {
-    // For edit mode, we need to fetch playlist for the edited class
-    const selected = playlistSubjects.find((s) => s._id === playlistSubjectId);
-    if (selected) {
-      setEditForm((prev) => ({
-        ...prev,
-        playlistSubjectId: selected._id,
-        subjectName: selected.subjectName.name,
-      }));
+      setEditForm((prev) => ({ ...prev, playlistSubjectId: "" }));
+      setEditPlaylistSubjects([]);
     }
   };
 
@@ -173,7 +166,7 @@ export default function VideosPage() {
         url: "/video",
         data: {
           className: form.className,
-          subjectName: form.playlistSubjectId, // Send the playlist subject _id
+          subjectName: form.playlistSubjectId,
           youtubeURL: videoId,
           name: form.name,
         },
@@ -182,6 +175,7 @@ export default function VideosPage() {
 
       toast.success("Video created successfully");
       setForm(emptyForm);
+      refetchVideos();
     } catch (error) {
       showApiError(error);
     }
@@ -190,35 +184,55 @@ export default function VideosPage() {
   const openEdit = async (video: TVideo) => {
     setEditing(video);
 
-    // Fetch playlist for the video's class to get subjects
-    const playlistResponse = await fetch(
-      `http://localhost:5000/api/v1/playlist/classID/${video.className._id}`,
-    );
-    const playlistData = await playlistResponse.json();
-    const playlist = playlistData.data?.[0];
+    // Set basic form data
+    setEditForm({
+      className: video.className._id,
+      playlistSubjectId: "",
+      embedCode: `https://www.youtube.com/embed/${video.youtubeURL}`,
+      name: video.name,
+    });
 
-    if (playlist) {
-      const playlistSubjects = playlist.subjects;
-      // Find the matching playlist subject
-      const matchedSubject = playlistSubjects.find(
-        (s: any) => s.subjectName._id === video.subjectName._id,
+    // Fetch playlist for this class
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/v1/playlist/classID/${video.className._id}`,
       );
+      const result = await response.json();
+      const playlist = result.data?.[0];
 
-      setEditForm({
-        className: video.className._id,
-        playlistSubjectId: matchedSubject?._id || "",
-        subjectName: video.subjectName.name,
-        embedCode: `https://www.youtube.com/embed/${video.youtubeURL}`,
-        name: video.name,
-      });
+      if (playlist && playlist.subjects) {
+        setEditPlaylistSubjects(playlist.subjects);
 
-      setPlaylistSubjects(playlistSubjects);
-      setSelectedPlaylist(playlist);
+        // Find the matching subject in the playlist
+        const matchedSubject = playlist.subjects.find(
+          (subject: TPlaylistSubject) =>
+            subject.subjectName._id === video.subjectName._id,
+        );
+
+        if (matchedSubject) {
+          setEditForm((prev) => ({
+            ...prev,
+            playlistSubjectId: matchedSubject._id,
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching playlist:", error);
     }
   };
 
   const handleUpdate = async () => {
     if (!editing) return;
+
+    if (
+      !editForm.className ||
+      !editForm.playlistSubjectId ||
+      !editForm.embedCode ||
+      !editForm.name
+    ) {
+      toast.error("Please fill all fields");
+      return;
+    }
 
     const videoId = extractVideoId(editForm.embedCode);
     if (!videoId) {
@@ -240,6 +254,7 @@ export default function VideosPage() {
 
       toast.success("Video updated successfully");
       setEditing(null);
+      refetchVideos();
     } catch (error) {
       showApiError(error);
     }
@@ -255,6 +270,7 @@ export default function VideosPage() {
         invalidatesTags: ["video"],
       }).unwrap();
       toast.success("Video deleted successfully");
+      refetchVideos();
     } catch (error) {
       showApiError(error);
     }
@@ -304,7 +320,12 @@ export default function VideosPage() {
                 </label>
                 <select
                   value={form.playlistSubjectId}
-                  onChange={(e) => handleSubjectSelect(e.target.value)}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      playlistSubjectId: e.target.value,
+                    }))
+                  }
                   disabled={!form.className || playlistSubjects.length === 0}
                   className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -492,20 +513,30 @@ export default function VideosPage() {
                       <select
                         value={editForm.playlistSubjectId}
                         onChange={(e) =>
-                          handleEditSubjectSelect(e.target.value)
+                          setEditForm((prev) => ({
+                            ...prev,
+                            playlistSubjectId: e.target.value,
+                          }))
                         }
                         disabled={
-                          !editForm.className || playlistSubjects.length === 0
+                          !editForm.className ||
+                          editPlaylistSubjects.length === 0
                         }
                         className="w-full px-3 py-2.5 bg-[#131A13] border border-[#1F3521] text-[#E8F5E8] rounded-lg text-sm focus:border-[#228B22] focus:outline-none disabled:opacity-50"
                       >
                         <option value="">Select Subject</option>
-                        {playlistSubjects.map((subject) => (
+                        {editPlaylistSubjects.map((subject) => (
                           <option key={subject._id} value={subject._id}>
                             {subject.subjectName.name}
                           </option>
                         ))}
                       </select>
+                      {editForm.className &&
+                        editPlaylistSubjects.length === 0 && (
+                          <p className="text-yellow-500 text-xs mt-1">
+                            No playlist found for this class
+                          </p>
+                        )}
                     </div>
                   </div>
 
