@@ -34,7 +34,6 @@ const PlaylistCard = ({
   className: string;
   classId: string;
 }) => {
-  console.log("card", card);
   return (
     <article className="card bg-gradient-to-br from-[#0F170F] to-[#131A13] rounded-xl p-5 border border-[#1F3521] transition-all duration-400 hover:-translate-y-3 hover:shadow-2xl hover:shadow-[#228B22]/20 hover:border-[#228B22] focus-within:outline focus-within:outline-2 focus-within:[outline-color:#228B22] focus-within:outline-offset-2 flex flex-col relative group overflow-hidden">
       {/* Animated Background Overlay */}
