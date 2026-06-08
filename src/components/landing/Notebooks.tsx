@@ -1,20 +1,28 @@
 "use client";
 
+import { TNote } from "@/src/types";
+import { useGetDynamicQuery } from "@/src/redux/features/dynamic/dynamicApi";
 import { useEffect } from "react";
 
 interface NotebookItem {
-  icon: string;
+  image: string;
   name: string;
+  driveLink: string;
   ariaLabel: string;
 }
 
 const NotebookItem = ({ notebook }: { notebook: NotebookItem }) => {
   const handleClick = () => {
-    const toast = document.getElementById("toast");
-    if (toast) {
-      toast.textContent = `${notebook.name} notes coming soon!`;
-      toast.classList.add("show");
-      setTimeout(() => toast.classList.remove("show"), 3000);
+    // Open the Google Drive link in a new tab
+    if (notebook.driveLink) {
+      window.open(notebook.driveLink, "_blank");
+    } else {
+      const toast = document.getElementById("toast");
+      if (toast) {
+        toast.textContent = `${notebook.name} notes coming soon!`;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 3000);
+      }
     }
   };
 
@@ -34,10 +42,16 @@ const NotebookItem = ({ notebook }: { notebook: NotebookItem }) => {
       onClick={handleClick}
       onKeyPress={handleKeyPress}
     >
-      {/* Notebook Icon */}
-      <div className="notebook-icon text-5xl mb-2.5 leading-none">
-        {notebook.icon}
-      </div>
+      {/* Notebook Image/Icon */}
+      {notebook.image ? (
+        <img
+          src={notebook.image}
+          alt={notebook.name}
+          className="notebook-icon w-16 h-16 mx-auto mb-2.5 object-cover rounded-lg"
+        />
+      ) : (
+        <div className="notebook-icon text-5xl mb-2.5 leading-none">📚</div>
+      )}
 
       {/* Notebook Name */}
       <div className="notebook-name font-semibold text-[#E8F5E8] text-base">
@@ -48,6 +62,25 @@ const NotebookItem = ({ notebook }: { notebook: NotebookItem }) => {
 };
 
 export default function Notebooks() {
+  // Fetch notes from API
+  const { data: noteData, isLoading } = useGetDynamicQuery({
+    url: "/note",
+  });
+
+  // Group notes by subject/category
+  const notebooks: NotebookItem[] = noteData?.data
+    ? noteData.data.map((note: TNote) => ({
+        image: note.image,
+        name: note.name,
+        driveLink: note.driveLink,
+        ariaLabel: `${note.name} notes - Click to open`,
+      }))
+    : [];
+
+  // If no notes from API, show default empty state
+  const displayNotebooks = notebooks.length > 0 ? notebooks : [];
+
+  // Intersection Observer for animations
   useEffect(() => {
     const observerOptions = {
       threshold: 0.1,
@@ -68,17 +101,7 @@ export default function Notebooks() {
     });
 
     return () => observer.disconnect();
-  }, []);
-
-  const notebooks: NotebookItem[] = [
-    { icon: "📐", name: "Math", ariaLabel: "Math notes" },
-    { icon: "🔬", name: "Science", ariaLabel: "Science notes" },
-    { icon: "⚛️", name: "Physics", ariaLabel: "Physics notes" },
-    { icon: "🧪", name: "Chemistry", ariaLabel: "Chemistry notes" },
-    { icon: "📚", name: "English", ariaLabel: "English notes" },
-    { icon: "🧬", name: "Biology", ariaLabel: "Biology notes" },
-    { icon: "💻", name: "ICT", ariaLabel: "ICT notes" },
-  ];
+  }, [displayNotebooks]);
 
   return (
     <section
@@ -96,7 +119,7 @@ export default function Notebooks() {
             id="notebooks-title"
             className="section-title text-4xl md:text-5xl font-extrabold mb-3.5 text-[#E8F5E8]"
           >
-            Note Books - 7 Subjects
+            Note Books - {displayNotebooks.length} Subjects
           </h2>
           <p className="section-description text-base md:text-xl text-[#A8C5A8]">
             Comprehensive handwritten notes and theory materials for all
@@ -104,20 +127,50 @@ export default function Notebooks() {
           </p>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="notebook-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div
+                key={i}
+                className="bg-[#0F170F] rounded-lg p-6 border border-[#1F3521] animate-pulse"
+              >
+                <div className="w-16 h-16 bg-[#1F3521] rounded-lg mx-auto mb-2"></div>
+                <div className="h-4 w-20 bg-[#1F3521] rounded mx-auto"></div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Notebooks Grid */}
-        <div className="notebook-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
-          {notebooks.map((notebook, index) => (
-            <div
-              key={notebook.name}
-              className="animate-on-scroll scale"
-              style={{
-                animation: `scaleIn 0.6s ease ${index * 0.05}s both`,
-              }}
-            >
-              <NotebookItem notebook={notebook} />
-            </div>
-          ))}
-        </div>
+        {!isLoading && displayNotebooks.length > 0 && (
+          <div className="notebook-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            {displayNotebooks.map((notebook, index) => (
+              <div
+                key={notebook.name}
+                className="animate-on-scroll scale"
+                style={{
+                  animation: `scaleIn 0.6s ease ${index * 0.05}s both`,
+                }}
+              >
+                <NotebookItem notebook={notebook} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && displayNotebooks.length === 0 && (
+          <div className="text-center py-12 bg-[#0F170F] rounded-xl border border-[#1F3521]">
+            <div className="text-6xl mb-4">📚</div>
+            <h3 className="text-xl font-bold text-[#E8F5E8] mb-2">
+              No Notes Available
+            </h3>
+            <p className="text-[#A8C5A8]">
+              Check back soon for study materials!
+            </p>
+          </div>
+        )}
       </div>
 
       {/* CSS Animations */}

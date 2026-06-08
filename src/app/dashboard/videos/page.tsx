@@ -1,13 +1,14 @@
 "use client";
+
 import {
   useDeleteDynamicMutation,
   useGetDynamicQuery,
   usePatchDynamicMutation,
   usePostDynamicMutation,
 } from "@/src/redux/features/dynamic/dynamicApi";
-import { TClass, TSubject, TVideo } from "@/src/types";
+import { TClass, TVideo } from "@/src/types";
 import { showApiError } from "@/src/utils/showApiError";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 
 type TPlaylistSubject = {
@@ -40,13 +41,8 @@ export default function VideosPage() {
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<TVideo | null>(null);
   const [editForm, setEditForm] = useState(emptyForm);
-  const [playlistSubjects, setPlaylistSubjects] = useState<TPlaylistSubject[]>(
-    [],
-  );
-  const [editPlaylistSubjects, setEditPlaylistSubjects] = useState<
-    TPlaylistSubject[]
-  >([]);
 
+  // Fetch videos
   const {
     data: videoData,
     isLoading,
@@ -55,12 +51,13 @@ export default function VideosPage() {
     url: "/video",
   });
 
+  // Fetch classes
   const { data: classData } = useGetDynamicQuery({
     url: "/class",
   });
 
   // Fetch playlist for selected class in create form
-  const { data: playlistData, refetch: refetchPlaylist } = useGetDynamicQuery(
+  const { data: playlistData } = useGetDynamicQuery(
     {
       url: form.className ? `/playlist/classID/${form.className}` : "",
     },
@@ -88,42 +85,37 @@ export default function VideosPage() {
   const editPlaylists: TPlaylist[] = editPlaylistData?.data || [];
 
   // Extract subjects from playlist when class is selected (create form)
-  useEffect(() => {
-    if (form.className && playlists.length > 0) {
-      const playlist = playlists[0];
-      setPlaylistSubjects(playlist?.subjects || []);
-    } else {
-      setPlaylistSubjects([]);
-    }
-  }, [form.className, playlists]);
+  // Add these after your data fetching
+  const playlistSubjects =
+    form.className && playlists.length > 0 ? playlists[0]?.subjects || [] : [];
 
-  // Extract subjects from playlist when class is selected (edit form)
-  useEffect(() => {
-    if (editForm.className && editPlaylists.length > 0) {
-      const playlist = editPlaylists[0];
-      setEditPlaylistSubjects(playlist?.subjects || []);
-    } else {
-      setEditPlaylistSubjects([]);
-    }
-  }, [editForm.className, editPlaylists]);
+  const editPlaylistSubjects =
+    editForm.className && editPlaylists.length > 0
+      ? editPlaylists[0]?.subjects || []
+      : [];
 
-  const updateForm = (key: keyof typeof form, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    if (key === "className") {
-      setForm((prev) => ({ ...prev, playlistSubjectId: "" }));
-      setPlaylistSubjects([]);
-    }
-  };
+  const updateForm = useCallback((key: keyof typeof form, value: string) => {
+    setForm((prev) => {
+      if (key === "className") {
+        return { ...prev, [key]: value, playlistSubjectId: "" };
+      }
+      return { ...prev, [key]: value };
+    });
+  }, []);
 
-  const updateEditForm = (key: keyof typeof editForm, value: string) => {
-    setEditForm((prev) => ({ ...prev, [key]: value }));
-    if (key === "className") {
-      setEditForm((prev) => ({ ...prev, playlistSubjectId: "" }));
-      setEditPlaylistSubjects([]);
-    }
-  };
+  const updateEditForm = useCallback(
+    (key: keyof typeof editForm, value: string) => {
+      setEditForm((prev) => {
+        if (key === "className") {
+          return { ...prev, [key]: value, playlistSubjectId: "" };
+        }
+        return { ...prev, [key]: value };
+      });
+    },
+    [],
+  );
 
-  const extractVideoId = (input: string) => {
+  const extractVideoId = useCallback((input: string) => {
     let match = input.match(
       /src="https:\/\/www\.youtube\.com\/embed\/([^"?]+)/,
     );
@@ -135,16 +127,19 @@ export default function VideosPage() {
     if (input.length === 11) return input;
 
     return null;
-  };
+  }, []);
 
-  const getThumbFromEmbed = (embedCode: string) => {
-    const videoId = extractVideoId(embedCode);
-    return videoId
-      ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
-      : null;
-  };
+  const getThumbFromEmbed = useCallback(
+    (embedCode: string) => {
+      const videoId = extractVideoId(embedCode);
+      return videoId
+        ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+        : null;
+    },
+    [extractVideoId],
+  );
 
-  const handleCreate = async () => {
+  const handleCreate = useCallback(async () => {
     if (
       !form.className ||
       !form.playlistSubjectId ||
@@ -179,12 +174,11 @@ export default function VideosPage() {
     } catch (error) {
       showApiError(error);
     }
-  };
+  }, [form, createVideo, extractVideoId, refetchVideos]);
 
-  const openEdit = async (video: TVideo) => {
+  const openEdit = useCallback(async (video: TVideo) => {
     setEditing(video);
 
-    // Set basic form data
     setEditForm({
       className: video.className._id,
       playlistSubjectId: "",
@@ -192,10 +186,9 @@ export default function VideosPage() {
       name: video.name,
     });
 
-    // Fetch playlist for this class
     try {
       const response = await fetch(
-        `http://localhost:5000/api/v1/playlist/classID/${video.className._id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/playlist/classID/${video.className._id}`,
       );
       const result = await response.json();
       const playlist = result.data?.[0];
@@ -203,7 +196,6 @@ export default function VideosPage() {
       if (playlist && playlist.subjects) {
         setEditPlaylistSubjects(playlist.subjects);
 
-        // Find the matching subject in the playlist
         const matchedSubject = playlist.subjects.find(
           (subject: TPlaylistSubject) =>
             subject.subjectName._id === video.subjectName._id,
@@ -219,9 +211,9 @@ export default function VideosPage() {
     } catch (error) {
       console.error("Error fetching playlist:", error);
     }
-  };
+  }, []);
 
-  const handleUpdate = async () => {
+  const handleUpdate = useCallback(async () => {
     if (!editing) return;
 
     if (
@@ -258,27 +250,30 @@ export default function VideosPage() {
     } catch (error) {
       showApiError(error);
     }
-  };
+  }, [editing, editForm, updateVideo, extractVideoId, refetchVideos]);
 
-  const handleDelete = async (id: string) => {
-    const confirmed = confirm("Are you sure you want to delete this video?");
-    if (!confirmed) return;
+  const handleDelete = useCallback(
+    async (id: string) => {
+      const confirmed = confirm("Are you sure you want to delete this video?");
+      if (!confirmed) return;
 
-    try {
-      await deleteVideo({
-        url: `/video/${id}`,
-        invalidatesTags: ["video"],
-      }).unwrap();
-      toast.success("Video deleted successfully");
-      refetchVideos();
-    } catch (error) {
-      showApiError(error);
-    }
-  };
+      try {
+        await deleteVideo({
+          url: `/video/${id}`,
+          invalidatesTags: ["video"],
+        }).unwrap();
+        toast.success("Video deleted successfully");
+        refetchVideos();
+      } catch (error) {
+        showApiError(error);
+      }
+    },
+    [deleteVideo, refetchVideos],
+  );
 
-  const getEmbedUrl = (videoId: string) => {
+  const getEmbedUrl = useCallback((videoId: string) => {
     return `https://www.youtube.com/embed/${videoId}`;
-  };
+  }, []);
 
   return (
     <div className="p-6 bg-[#0A0F0A] min-h-screen">

@@ -75,7 +75,7 @@ export default function Teacher() {
           </span>
           <h2
             id="teacher-title"
-            className="section-title text-4xl md:text-5xl font-extrabold mb-3.5 text-[#E8F5E8]"
+            className="section-title text-4xl md:text-[40px] my-3 font-bold mb-3.5 text-[#E8F5E8]"
           >
             Your Teacher
           </h2>
@@ -85,60 +85,89 @@ export default function Teacher() {
         </div>
 
         {/* Teacher Card */}
-        <article className="teacher-card animate-on-scroll scale flex flex-col md:flex-row gap-8 md:gap-16 items-center bg-gradient-to-b from-[#0F170F] to-[#0A0F0A] backdrop-blur-3xl bg-opacity-80 border border-[#1F3521] rounded-3xl p-8 md:p-10 shadow-2xl transition-all duration-400 hover:-translate-y-2 hover:shadow-3xl hover:border-[#228B22] max-w-4xl mx-auto">
+        <article className="teacher-card animate-on-scroll scale flex flex-col md:flex-row gap-8 md:gap-16 items-center bg-gradient-to-br from-[#0F170F] via-[#0A0F0A] to-[#051005] backdrop-blur-3xl bg-opacity-90 border border-[#1F3521] rounded-3xl p-8 md:p-10 shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_0_30px_rgba(34,139,34,0.3)] hover:border-[#228B22] max-w-4xl mx-auto relative overflow-hidden group">
+          {/* Animated Background Glow */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#228B22]/0 via-[#228B22]/10 to-[#228B22]/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 animate-shimmer"></div>
+
+          {/* Corner Glow Effects */}
+          <div className="absolute top-0 left-0 w-32 h-32 bg-[#228B22]/20 rounded-full filter blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+          <div className="absolute bottom-0 right-0 w-32 h-32 bg-[#228B22]/20 rounded-full filter blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+
+          {/* Border Glow Animation */}
+          <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute inset-0 rounded-3xl border-2 border-[#228B22] animate-pulse-ring"></div>
+          </div>
+
           {/* Teacher Image Wrapper */}
           <div className="teacher-image-wrapper relative flex-shrink-0">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#228B22] to-[#1A6B1A] rounded-2xl z-0 opacity-50 filter blur-2xl transition-opacity duration-400 hover:opacity-80"></div>
+            {/* Animated Glow Behind Image */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#228B22] via-[#3DAA3D] to-[#228B22] rounded-2xl z-0 opacity-0 group-hover:opacity-80 transition-all duration-500 group-hover:blur-2xl animate-pulse-glow"></div>
+
+            {/* Rotating Ring */}
+            <div className="absolute inset-[-8px] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+              <div className="absolute inset-0 rounded-2xl border-2 border-[#228B22] border-t-transparent animate-spin-slow"></div>
+            </div>
+
+            {/* Image Container */}
             <div className="relative z-10">
               <Image
-                src={teacher.image}
+                src={"/teacher.jpeg"}
                 alt={teacher.imageAlt}
                 width={180}
                 height={180}
                 loading="lazy"
-                className="teacher-image w-44 h-44 md:w-52 md:h-52 rounded-xl object-cover border-4 border-[#1F551F] shadow-lg transition-transform duration-400 hover:scale-105"
+                className="teacher-image w-44 h-44 md:w-52 md:h-52 rounded-xl object-cover border-4 border-[#1F551F] shadow-lg transition-all duration-500 group-hover:scale-110 group-hover:border-[#228B22] group-hover:shadow-2xl"
               />
+
+              {/* Pulse Dot on Image */}
+              <div className="absolute bottom-2 right-2 w-4 h-4 bg-[#228B22] rounded-full animate-pulse-bright shadow-lg"></div>
             </div>
           </div>
 
           {/* Teacher Details */}
           <div className="teacher-details flex-1 text-center md:text-left">
-            {/* Teacher Name */}
-            <h3 className="teacher-name text-3xl md:text-4xl font-extrabold mb-2 bg-gradient-to-r from-[#3DAA3D] to-[#228B22] bg-clip-text text-transparent">
-              {teacher.name}
-            </h3>
+            {/* Teacher Name with Animated Underline */}
+            <div className="relative inline-block md:inline-block">
+              <h3 className="teacher-name text-3xl md:text-4xl font-extrabold mb-2 bg-gradient-to-r from-[#3DAA3D] via-[#228B22] to-[#3DAA3D] bg-clip-text text-transparent bg-200% animate-gradient">
+                {teacher.name}
+              </h3>
+              <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-[#228B22] to-[#3DAA3D] group-hover:w-full transition-all duration-700 ease-out"></div>
+            </div>
 
-            {/* Designation */}
-            <p className="teacher-designation text-base md:text-lg text-[#228B22] font-semibold mb-2">
+            {/* Designation with Slide Animation */}
+            <p className="teacher-designation text-base md:text-lg text-[#228B22] font-semibold mb-2 transform transition-all duration-500 group-hover:translate-x-2">
               {teacher.designation}
             </p>
 
-            {/* Experience Badge */}
-            <div className="teacher-experience inline-flex md:inline-flex items-center gap-2 px-4 py-2 bg-[#131A13] border border-[#1F551F] rounded-lg text-sm text-[#A8C5A8] font-semibold mb-4 before:content-['⭐']">
+            {/* Experience Badge with Glow */}
+            <div className="teacher-experience inline-flex md:inline-flex items-center gap-2 px-4 py-2 bg-[#131A13] border border-[#1F551F] rounded-lg text-sm text-[#A8C5A8] font-semibold mb-4 transition-all duration-300 group-hover:border-[#228B22] group-hover:shadow-[0_0_15px_rgba(34,139,34,0.3)] group-hover:scale-105">
+              <span className="text-[#228B22] text-lg">⭐</span>
               {teacher.experience}
             </div>
 
-            {/* Bio */}
-            <p className="teacher-bio text-[#A8C5A8] mb-4 text-base leading-relaxed">
+            {/* Bio with Fade Animation */}
+            <p className="teacher-bio text-[#A8C5A8] mb-4 text-base leading-relaxed transition-all duration-500 group-hover:text-[#C8E6C9]">
               {teacher.bio}
             </p>
 
-            {/* Message/Quote */}
+            {/* Message/Quote with Neon Effect */}
             <div
-              className={`teacher-message px-4 py-3 bg-[#131A13] border-l-4 border-[#228B22] rounded-lg font-italic text-[#3DAA3D] mb-5 text-base leading-relaxed before:content-['\"'] before:text-3xl before:text-[#228B22] before:leading-none before:mr-1 after:content-['\"'] after:text-3xl after:text-[#228B22] after:leading-none after:ml-1`}
+              className={`teacher-message px-4 py-3 bg-[#131A13] border-l-4 border-[#228B22] rounded-lg font-italic text-[#3DAA3D] mb-5 text-base leading-relaxed relative overflow-hidden transition-all duration-500 group-hover:shadow-[0_0_20px_rgba(34,139,34,0.2)] before:content-['"'] before:text-3xl before:text-[#228B22] before:leading-none before:mr-1 after:content-['"'] after:text-3xl after:text-[#228B22] after:leading-none after:ml-1`}
             >
+              <div className="absolute inset-0 bg-gradient-to-r from-[#228B22]/0 via-[#228B22]/5 to-[#228B22]/0 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
               {teacher.message}
             </div>
 
-            {/* Social Links */}
+            {/* Social Links with Bounce Animation */}
             <div className="teacher-social flex gap-3.5 md:justify-start justify-center">
-              {teacher.social.map((social) => (
+              {teacher.social.map((social, index) => (
                 <a
                   key={social.platform}
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 md:w-11 md:h-11 rounded-lg bg-gradient-to-br from-[#228B22] to-[#2D8F2D] flex items-center justify-center text-white text-lg font-bold transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1 hover:rotate-6 focus:outline-2 focus:outline-[#228B22] focus:outline-offset-2"
+                  className="w-10 h-10 md:w-11 md:h-11 rounded-lg bg-gradient-to-br from-[#228B22] to-[#2D8F2D] flex items-center justify-center text-white text-lg font-bold transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-2 hover:rotate-12 hover:scale-110 focus:outline-2 focus:outline-[#228B22] focus:outline-offset-2 animate-social-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                   aria-label={social.ariaLabel}
                 >
                   {social.icon}
@@ -147,6 +176,8 @@ export default function Teacher() {
             </div>
           </div>
         </article>
+
+        {/* Add these animations to your styles */}
       </div>
 
       {/* CSS Animations */}
@@ -191,6 +222,108 @@ export default function Teacher() {
           transform: translate(0) scale(1);
         }
       `}</style>
+      <style>{`
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.05);
+      opacity: 0;
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes pulse-bright {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(0.8);
+    }
+  }
+
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes social-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+
+  .animate-pulse-ring {
+    animation: pulse-ring 2s ease-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-pulse-bright {
+    animation: pulse-bright 1.5s ease-in-out infinite;
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
+  .animate-social-in {
+    animation: social-in 0.5s ease-out forwards;
+  }
+`}</style>
     </section>
   );
 }
