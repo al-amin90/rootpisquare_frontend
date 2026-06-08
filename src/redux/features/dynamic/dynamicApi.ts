@@ -35,12 +35,16 @@ const dynamicApi = baseApi.injectEndpoints({
 
     putDynamic: builder.mutation({
       query: ({ url, data }) => ({ url, method: "PUT", body: data }),
-      invalidatesTags: dynamicTag,
+      invalidatesTags: (_result, _error, arg) => {
+        return arg.invalidatesTags || dynamicTag(_result, _error, arg);
+      },
     }),
 
     deleteDynamic: builder.mutation({
       query: ({ url }) => ({ url, method: "DELETE" }),
-      invalidatesTags: dynamicTag,
+      invalidatesTags: (_result, _error, arg) => {
+        return arg.invalidatesTags || dynamicTag(_result, _error, arg);
+      },
     }),
   }),
   overrideExisting: false,
