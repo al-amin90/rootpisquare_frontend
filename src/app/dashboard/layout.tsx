@@ -10,7 +10,8 @@ export default function DashboardLayout({
     <div className="flex min-h-screen bg-[#0A0F0A]">
       <Sidebar />
       <main className="flex-1 p-8 overflow-auto">
-        <ProtectedRoute>{children}</ProtectedRoute>
+        {children}
+        {/* <ProtectedRoute>{children}</ProtectedRoute> */}
       </main>
     </div>
   );
