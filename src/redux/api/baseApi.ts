@@ -99,9 +99,9 @@ export const baseApi = createApi({
   tagTypes: [
     "auth",
     "class",
-    // "product",
-    "color",
-    "products",
+    "product",
+    "subject",
+    "playlist",
     "singleProduct",
   ],
   endpoints: () => ({}),

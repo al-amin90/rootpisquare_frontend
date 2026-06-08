@@ -21,3 +21,14 @@ export type TBatch = {
   icon: string;
   slots: string;
 };
+
+export type TSubjectEntryForm = {
+  subjectName: string;
+  image: File | null;
+  description: string;
+};
+
+export type TPlaylistForm = {
+  className: string;
+  subjects: TSubjectEntryForm[];
+};
