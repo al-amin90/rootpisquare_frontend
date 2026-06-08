@@ -184,7 +184,7 @@ export default function PlaylistsPage() {
       ...f,
       subjects: [
         ...f.subjects,
-        { subjectName: "", image: null, description: "" },
+        { subjectName: "", image: null, description: "", hasNewImage: false },
       ],
     }));
   };

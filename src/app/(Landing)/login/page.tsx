@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useLoginMutation } from "@/src/redux/features/auth/authApi";
 import { setUser } from "@/src/redux/features/auth/authSlice";
 import { useDispatch } from "react-redux";
@@ -9,7 +9,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, Mail, Lock, LogIn, ArrowRight } from "lucide-react";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const dispatch = useDispatch();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -256,5 +256,13 @@ export default function LoginPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

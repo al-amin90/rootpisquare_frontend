@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useGetDynamicQuery } from "@/src/redux/features/dynamic/dynamicApi";
 import { TVideo } from "@/src/types";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -19,7 +19,7 @@ interface VideoItem {
   };
 }
 
-export default function PlaylistPage() {
+function PlaylistPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -467,5 +467,13 @@ export default function PlaylistPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PlaylistPage() {
+  return (
+    <Suspense fallback={null}>
+      <PlaylistPageContent />
+    </Suspense>
   );
 }

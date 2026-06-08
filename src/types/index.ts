@@ -26,6 +26,8 @@ export type TSubjectEntryForm = {
   subjectName: string;
   image: File | null;
   description: string;
+  hasNewImage?: boolean;
+  imageDeleted?: boolean;
 };
 
 export type TPlaylistForm = {

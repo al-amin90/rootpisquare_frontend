@@ -162,16 +162,6 @@ export default function Courses() {
 
   // Compute batches directly without state and useEffect
 
-  // Helper function to get icon based on batch title
-  const getIconForTitle = (title: string) => {
-    for (const [key, icon] of Object.entries(icons)) {
-      if (title.includes(key)) {
-        return icon;
-      }
-    }
-    return "🎓";
-  };
-
   const batches: CourseCardProps[] = batchData?.data
     ? batchData.data.map((batch: TBatch) => ({
         _id: batch._id,

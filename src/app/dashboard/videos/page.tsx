@@ -194,8 +194,6 @@ export default function VideosPage() {
       const playlist = result.data?.[0];
 
       if (playlist && playlist.subjects) {
-        setEditPlaylistSubjects(playlist.subjects);
-
         const matchedSubject = playlist.subjects.find(
           (subject: TPlaylistSubject) =>
             subject.subjectName._id === video.subjectName._id,
