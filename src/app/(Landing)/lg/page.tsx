@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, Mail, Lock, LogIn, ArrowRight } from "lucide-react";
+import { setToken } from "@/src/utils/auth";
 
 function LoginPageContent() {
   const dispatch = useDispatch();
@@ -30,6 +31,9 @@ function LoginPageContent() {
     const token = localStorage.getItem("accessToken");
     if (token) {
       router.push(redirect);
+      const navigationTimer = setTimeout(() => {
+        window.location.href = redirect;
+      }, 100);
     }
   }, [router, redirect]);
 
@@ -58,6 +62,7 @@ function LoginPageContent() {
       if (result.success && result.data?.accessToken) {
         // Store token
         localStorage.setItem("accessToken", result.data.accessToken);
+        setToken(result.data.accessToken);
 
         // Update Redux state
         dispatch(setUser({ accessToken: result.data.accessToken }));
@@ -66,6 +71,13 @@ function LoginPageContent() {
 
         // Redirect to dashboard or previous page
         router.push(redirect);
+
+        const navigationTimer = setTimeout(() => {
+          if (window.location.pathname !== "/dashboard") {
+            // console.log("Router push failed, using window.location");
+            window.location.href = "/dashboard";
+          }
+        }, 100);
       } else {
         toast.error(result.message || "Login failed. Please try again.");
       }

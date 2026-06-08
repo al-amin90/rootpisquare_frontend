@@ -2,14 +2,14 @@ import Cookies from "js-cookie";
 
 // Set token in cookies
 export const setToken = (token: string, expiryDays = 7) => {
-  Cookies.set("access_token", token, { expires: expiryDays });
+  Cookies.set("accessToken", token, { expires: expiryDays });
 };
 
 // Get token from cookies
 export const getToken = () => {
-  return Cookies.get("access_token");
+  return Cookies.get("accessToken");
 };
 
 export const removeToken = () => {
-  return Cookies.remove("access_token");
+  return Cookies.remove("accessToken");
 };

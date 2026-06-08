@@ -51,8 +51,6 @@ export default function VideosPage() {
     url: "/video",
   });
 
-  console.log("editForm", editForm);
-
   // Fetch classes
   const { data: classData } = useGetDynamicQuery({
     url: "/class",
@@ -168,8 +166,6 @@ export default function VideosPage() {
         invalidatesTags: ["video"],
       }).unwrap();
 
-      console.log("form", form);
-
       toast.success("Video created successfully");
       setForm(emptyForm);
       refetchVideos();
@@ -195,15 +191,11 @@ export default function VideosPage() {
 
       const playlist = result.data?.[0];
 
-      console.log("playlist", playlist);
-
       if (playlist && playlist.subjects) {
         const matchedSubject = playlist.subjects.find(
           (subject: TPlaylistSubject) =>
             subject.subjectName._id === video.subjectName._id,
         );
-
-        console.log("matchedSubject", matchedSubject);
 
         if (matchedSubject) {
           setEditForm((prev) => ({

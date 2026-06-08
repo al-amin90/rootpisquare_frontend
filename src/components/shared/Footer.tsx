@@ -54,9 +54,9 @@ export default function Footer() {
       target: false,
     },
     {
-      href: "mailto:info@rootpisquare.com",
-      label: "✉️ Email: info@rootpisquare.com",
-      aria: "Email us at info@rootpisquare.com",
+      href: "mailto:mdsakibsaleem@gmail.com",
+      label: "✉️ Email: mdsakibsaleem@gmail.com",
+      aria: "Email us at mdsakibsaleem@gmail.com",
       target: false,
     },
   ];
