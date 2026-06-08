@@ -26,12 +26,12 @@ export default function LoginPage() {
   const [login] = useLoginMutation();
 
   // Check if already logged in
-  //   useEffect(() => {
-  //     const token = localStorage.getItem("accessToken");
-  //     if (token) {
-  //       router.push(redirect);
-  //     }
-  //   }, [router, redirect]);
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      router.push(redirect);
+    }
+  }, [router, redirect]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

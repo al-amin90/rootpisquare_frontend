@@ -314,7 +314,7 @@ export default function PlaylistPage() {
                   </select>
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-[#A8C5A8] text-sm mb-2">
                     Subject
                   </label>
@@ -331,7 +331,7 @@ export default function PlaylistPage() {
                       </option>
                     ))}
                   </select>
-                </div>
+                </div> */}
 
                 {(selectedClass || selectedSubject) && (
                   <button
