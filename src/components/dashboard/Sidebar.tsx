@@ -1,6 +1,7 @@
 "use client";
+import { getToken } from "@/src/utils/auth";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: "🏠" },
@@ -14,6 +15,14 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const token = getToken();
+  if (pathname.startsWith("/dashboard") && !token) {
+    return router.push("/lg");
+  }
+
+  console.log("token", token);
 
   return (
     <aside className="w-64 min-h-screen bg-[#051005] border-r border-[#1F3521] flex flex-col">

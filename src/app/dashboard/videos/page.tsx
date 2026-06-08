@@ -51,6 +51,8 @@ export default function VideosPage() {
     url: "/video",
   });
 
+  console.log("editForm", editForm);
+
   // Fetch classes
   const { data: classData } = useGetDynamicQuery({
     url: "/class",
@@ -59,7 +61,7 @@ export default function VideosPage() {
   // Fetch playlist for selected class in create form
   const { data: playlistData } = useGetDynamicQuery(
     {
-      url: form.className ? `/playlist/classID/${form.className}` : "",
+      url: `/playlist/classID/${form.className}`,
     },
     { skip: !form.className },
   );
@@ -68,9 +70,7 @@ export default function VideosPage() {
   const { data: editPlaylistData, refetch: refetchEditPlaylist } =
     useGetDynamicQuery(
       {
-        url: editForm.className
-          ? `/playlist/classID/${editForm.className}`
-          : "",
+        url: `/playlist/classID/${editForm.className}`,
       },
       { skip: !editForm.className },
     );
@@ -168,6 +168,8 @@ export default function VideosPage() {
         invalidatesTags: ["video"],
       }).unwrap();
 
+      console.log("form", form);
+
       toast.success("Video created successfully");
       setForm(emptyForm);
       refetchVideos();
@@ -187,11 +189,13 @@ export default function VideosPage() {
     });
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/playlist/classID/${video.className._id}`,
-      );
-      const result = await response.json();
+      const result = await editPlaylistData;
+
+      if (!result) return;
+
       const playlist = result.data?.[0];
+
+      console.log("playlist", playlist);
 
       if (playlist && playlist.subjects) {
         const matchedSubject = playlist.subjects.find(
@@ -199,10 +203,12 @@ export default function VideosPage() {
             subject.subjectName._id === video.subjectName._id,
         );
 
+        console.log("matchedSubject", matchedSubject);
+
         if (matchedSubject) {
           setEditForm((prev) => ({
             ...prev,
-            playlistSubjectId: matchedSubject._id,
+            playlistSubjectId: matchedSubject.subjectName._id,
           }));
         }
       }
@@ -324,7 +330,7 @@ export default function VideosPage() {
                 >
                   <option value="">Select Subject</option>
                   {playlistSubjects.map((subject) => (
-                    <option key={subject._id} value={subject._id}>
+                    <option key={subject._id} value={subject.subjectName._id}>
                       {subject.subjectName.name}
                     </option>
                   ))}
@@ -519,7 +525,10 @@ export default function VideosPage() {
                       >
                         <option value="">Select Subject</option>
                         {editPlaylistSubjects.map((subject) => (
-                          <option key={subject._id} value={subject._id}>
+                          <option
+                            key={subject._id}
+                            value={subject.subjectName._id}
+                          >
                             {subject.subjectName.name}
                           </option>
                         ))}

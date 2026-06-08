@@ -72,6 +72,7 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   FetchBaseQueryError
 > = async (args: string | FetchArgs, api: any, extraOptions?: any) => {
   const result = await baseQuery(args, api, extraOptions);
+  console.log("result", result);
 
   if (result?.error?.status === 401) {
     const errorData = result?.error?.data as { message?: string } | undefined;

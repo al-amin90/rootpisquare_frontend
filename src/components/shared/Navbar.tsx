@@ -42,7 +42,6 @@ export default function Header() {
     { href: "#notebooks", label: "Note Books" },
     { href: "#teacher", label: "Teacher" },
     { href: "#contact", label: "Contact" },
-    { href: "/login", label: "Login" },
   ];
 
   return (
