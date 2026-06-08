@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IoLogoTiktok } from "react-icons/io5";
+import { BsThreadsFill } from "react-icons/bs";
+import { BsTwitterX } from "react-icons/bs";
 
 export default function Footer() {
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -60,14 +63,14 @@ export default function Footer() {
 
   const socialLinks = [
     {
-      href: "https://www.facebook.com/immd.sakibsaleem",
+      href: "https://www.facebook.com/RootPiSquare",
       label: "Facebook",
       icon: "f",
       aria: "Follow us on Facebook",
       bgColor: "bg-[#1877F2]",
     },
     {
-      href: "#",
+      href: "https://www.youtube.com/@root-pi-square",
       label: "YouTube",
       icon: "▶",
       aria: "Subscribe to our YouTube channel",
@@ -81,31 +84,38 @@ export default function Footer() {
       bgColor: "bg-[#25D366]",
     },
     {
-      href: "#",
+      href: "https://www.instagram.com/rootpisquare/",
       label: "Instagram",
       icon: "📷",
       aria: "Follow us on Instagram",
       bgColor: "bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF]",
     },
     {
-      href: "https://t.me/+2rFcEQ_FI6w0NjE1",
-      label: "Telegram",
-      icon: "✈️",
-      aria: "Join our Telegram channel",
+      href: "https://x.com/TheRootPiSquare",
+      label: "X",
+      icon: <BsTwitterX />,
+      aria: "Join our Twiiter",
       bgColor: "bg-[#0088CC]",
     },
     {
-      href: "#",
+      href: "https://www.linkedin.com/in/rootpisquare",
       label: "LinkedIn",
       icon: "in",
       aria: "Connect on LinkedIn",
       bgColor: "bg-[#0A66C2]",
     },
     {
-      href: "#",
-      label: "TikTok",
-      icon: "♪",
-      aria: "Follow us on TikTok",
+      href: "https://www.tiktok.com/@root.pi.square",
+      label: "Tik Tok",
+      icon: <IoLogoTiktok />,
+      aria: "Follow us on tiktok",
+      bgColor: "bg-black",
+    },
+    {
+      href: "https://www.threads.com/@rootpisquare",
+      label: "Threads",
+      icon: <BsThreadsFill />,
+      aria: "Follow us on Threads",
       bgColor: "bg-black",
     },
   ];

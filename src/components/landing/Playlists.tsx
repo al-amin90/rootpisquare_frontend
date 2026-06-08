@@ -34,6 +34,7 @@ const PlaylistCard = ({
   className: string;
   classId: string;
 }) => {
+  console.log("card", card);
   return (
     <article className="card bg-gradient-to-br from-[#0F170F] to-[#131A13] rounded-xl p-5 border border-[#1F3521] transition-all duration-400 hover:-translate-y-3 hover:shadow-2xl hover:shadow-[#228B22]/20 hover:border-[#228B22] focus-within:outline focus-within:outline-2 focus-within:[outline-color:#228B22] focus-within:outline-offset-2 flex flex-col relative group overflow-hidden">
       {/* Animated Background Overlay */}
@@ -88,7 +89,7 @@ const PlaylistCard = ({
 
       {/* Play Button with Enhanced Hover */}
       <Link
-        href={"/playlist"}
+        href={`/playlist?class=${classId}&subject=${card.subjectName._id}`}
         className="playlist-btn mt-auto px-4 py-2.5 bg-[#131A13] text-[#E8F5E8] border border-[#1F551F] rounded-lg text-sm font-semibold transition-all duration-300 hover:bg-[#228B22] hover:text-white hover:border-[#228B22] hover:-translate-y-0.5 hover:shadow-lg focus:outline-2 focus:outline-[#228B22] focus:outline-offset-2 cursor-pointer inline-flex items-center justify-center gap-2 group/btn relative overflow-hidden"
       >
         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover/btn:translate-x-full transition-transform duration-600"></span>
@@ -326,7 +327,7 @@ export default function Playlists() {
                 Join thousands of students who are already learning with us
               </p>
               <Link
-                href="/dashboard/videos"
+                href="/playlists"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#228B22] text-white rounded-lg font-semibold hover:bg-[#2E8B57] transition-all hover:scale-105"
               >
                 <span>🎯</span>
