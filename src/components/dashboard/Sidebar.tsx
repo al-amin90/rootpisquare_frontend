@@ -15,14 +15,6 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  const token = getToken();
-  if (pathname.startsWith("/dashboard") && !token) {
-    return router.push("/lg");
-  }
-
-  console.log("token", token);
 
   return (
     <aside className="w-64 min-h-screen bg-[#051005] border-r border-[#1F3521] flex flex-col">
